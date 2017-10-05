@@ -37,11 +37,17 @@
 
 #include <stdio.h>
 #include "DataTypeDefinitions.h"
-#include "NVIC.h"
 #include "GPIO.h"
-#include "PIT.h"
 #include "MK64F12.h"
 
+void delay(uint16 delay);
+void turnLEDsOff();
+void blueLEDOn();
+void redLEDOn();
+void greenLEDOn();
+void yellowColor();
+void purpleColor();
+void whiteColor();
 
 int main(void) {
 
@@ -83,4 +89,39 @@ int main(void) {
 
     }
     return 0 ;
+}
+
+void blueLEDOn(){
+		turnLEDsOff();
+	GPIOB->PDOR &= ~(0x00200000);/**Blue led on*/
+	delay(65000);
+}
+void redLEDOn(){
+		turnLEDsOff();
+	GPIOB->PDOR &= ~(0x00400000);/**Red led on*/
+	delay(65000);
+}
+void greenLEDOn(){
+		turnLEDsOff();
+	GPIOE->PDOR &= ~(0x4000000);/**Green led on*/
+	delay(65000);
+}
+void yellowColor(){
+		turnLEDsOff();
+	GPIOE->PDOR &= ~(0x4000000);/**Green led on*/
+	GPIOB->PDOR &= ~(0x00400000);/**Red led on*/
+	delay(65000);
+}
+void purpleColor(){
+		turnLEDsOff();
+	GPIOB->PDOR &= ~(0x00200000);/**Blue led on*/
+	GPIOB->PDOR &= ~(0x00400000);/**Red led on*/
+	delay(65000);
+}
+void whiteColor(){
+		turnLEDsOff();
+	GPIOB->PDOR &= ~(0x00400000);/**Red led on*/
+	GPIOB->PDOR &= ~(0x00200000);/**Blue led on*/
+	GPIOE->PDOR &= ~(0x4000000);/**Green led on*/
+	delay(65000);
 }

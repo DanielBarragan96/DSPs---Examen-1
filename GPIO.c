@@ -15,7 +15,6 @@
 static GPIO_interruptFlags_t GPIO_intrStatusFlag;
 
 void PORTC_IRQHandler(){
-	flag_c = TRUE;
 	GPIO_intrStatusFlag.flagPortC = TRUE;
 	GPIO_clearInterrupt(GPIO_C);
 }
