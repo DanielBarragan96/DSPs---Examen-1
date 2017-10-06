@@ -39,6 +39,23 @@
 #include "DataTypeDefinitions.h"
 #include "GPIO.h"
 #include "MK64F12.h"
+#include "NVIC.h"
+
+typedef struct
+{
+	void(*fptrBefore)(uint32);
+	uint16 dalay;
+	void (*fptrAfter)(uint16);
+}StateType;
+
+const StateType FineStateMachineMoore[5]=
+		{
+				{},
+				{},
+				{},
+				{},
+				{}
+		};
 
 void delay(uint16 delay);
 void turnLEDsOff();
@@ -82,6 +99,15 @@ int main(void) {
 		GPIOB->PDDR |= 0x00400000;
 		/**Configures GPIOE pin26 as output*/
 		GPIOE->PDDR |= 0x04000000;
+
+		/**Sets the threshold for interrupts, if the interrupt has higher priority constant that the BASEPRI, the interrupt will not be attended*/
+		NVIC_setBASEPRI_threshold(PRIORITY_5);
+		/**Enables and sets a particular interrupt and its priority*/
+		NVIC_enableInterruptAndPriotity(PORTA_IRQ,PRIORITY_4);
+		/**Enables and sets a particular interrupt and its priority*/
+		NVIC_enableInterruptAndPriotity(PORTC_IRQ,PRIORITY_4);
+
+		EnableInterrupts;
 
 		uint32 i = 0;
 
