@@ -45,17 +45,8 @@ typedef struct
 {
 	void(*fptrBefore)(uint32);
 	uint16 dalay;
-	void (*fptrAfter)(uint16);
+	void (*fptrAfter)(uint32);
 }StateType;
-
-const StateType FineStateMachineMoore[5]=
-		{
-				{},
-				{},
-				{},
-				{},
-				{}
-		};
 
 void delay(uint16 delay);
 void turnLEDsOff();
@@ -65,6 +56,17 @@ void greenLEDOn();
 void yellowColor();
 void purpleColor();
 void whiteColor();
+
+const StateType FineStateMachineMoore[5]=
+		{
+			{&yellowColor,650000,&blueLEDOn},
+			{&greenLEDOn,650000,&purpleColor},
+			{&blueLEDOn,650000,&redLEDOn},
+			{&purpleColor,650000,&yellowColor},
+			{&redLEDOn,650000,&greenLEDOn}
+		};
+
+
 
 int main(void) {
 
