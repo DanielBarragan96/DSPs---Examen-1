@@ -75,52 +75,52 @@ typedef enum{
 
 int main(void) {
 
-	/**Variable to capture the input value*/
-		uint32 inputValue = 0;
-		uint32 inputValue2 = 0;
+		/**Activating the clock gating of the GPIOs and the PIT*/
+				GPIO_clockGating(GPIO_A);
+				GPIO_clockGating(GPIO_B);
+				GPIO_clockGating(GPIO_C);
+				GPIO_clockGating(GPIO_E);
 
-		/**Activating the GPIOA, GPIOB, GPIOC and GPIOE clock gating*/
-		SIM->SCGC5 = 0x2E00;// 0x2C00 SW2 || 0X2E00 SW2&SW3
-		/**Pin control configuration of GPIOB pin22 and pin21 as GPIO*/
-		PORTB->PCR[21] = 0x00000100;
-		PORTB->PCR[22] = 0x00000100;
-		/**Pin control configuration of GPIOA pin5 as GPIO with is pull-up resistor enabled*/
-		PORTA->PCR[4] = 0x00000103;
-		/**Pin control configuration of GPIOC pin6 as GPIO with is pull-up resistor enabled*/
-		PORTC->PCR[6] = 0x00000103;
-		/**Pin control configuration of GPIOE pin26 as GPIO*/
-		PORTE->PCR[26] = 0x00000100;
-		/**Assigns a safe value to the output pin21 of the GPIOB*/
-		GPIOB->PDOR = 0x00200000;
-		/**Assigns a safe value to the output pin22 of the GPIOB*/
-		GPIOB->PDOR |= 0x00400000;
-		/**Assigns a safe value to the output pin26 of the GPIOE*/
-		GPIOE->PDOR |= 0x04000000;
-		/**Configures GPIOA pin5 as input*/
-		GPIOA->PDDR &=~(0x10);
-		/**Configures GPIOC pin6 as input*/
-		GPIOC->PDDR &=~(0x40);
-		/**Configures GPIOB pin21 as output*/
-		GPIOB->PDDR = 0x00200000;
-		/**Configures GPIOB pin22 as output*/
-		GPIOB->PDDR |= 0x00400000;
-		/**Configures GPIOE pin26 as output*/
-		GPIOE->PDDR |= 0x04000000;
+				/**Selected configurations*/
+				GPIO_pinControlRegisterType pinControlRegisterMux1 = GPIO_MUX1;
+				GPIO_pinControlRegisterType pinControlRegisterInputInterruptPSFE = GPIO_MUX1|GPIO_PE|GPIO_PS|INTR_FALLING_EDGE;
 
-		/**Sets the threshold for interrupts, if the interrupt has higher priority constant that the BASEPRI, the interrupt will not be attended*/
-		NVIC_setBASEPRI_threshold(PRIORITY_5);
-		/**Enables and sets a particular interrupt and its priority*/
-		NVIC_enableInterruptAndPriotity(PORTA_IRQ,PRIORITY_4);
-		/**Enables and sets a particular interrupt and its priority*/
-		NVIC_enableInterruptAndPriotity(PORTC_IRQ,PRIORITY_4);
+				/**Configure the characteristics in the GPIOs*/
+				GPIO_pinControlRegister(GPIO_B,BIT21,&pinControlRegisterMux1);
+				GPIO_pinControlRegister(GPIO_B,BIT22,&pinControlRegisterMux1);
+				GPIO_pinControlRegister(GPIO_E,BIT26,&pinControlRegisterMux1);
+				GPIO_pinControlRegister(GPIO_A,BIT4,&pinControlRegisterInputInterruptPSFE);
+				GPIO_pinControlRegister(GPIO_C,BIT6,&pinControlRegisterInputInterruptPSFE);
 
-		EnableInterrupts;
+				/**Assigns a safe value to the output pin21 of the GPIOB*/
+				GPIOB->PDOR |= 0x00200000;/**Blue led off*/
+				GPIOB->PDOR |= 0x00400000;/**Read led off*/
+
+				/**Configure Port Pins as input/output*/
+				GPIO_dataDirectionPIN(GPIO_B,GPIO_OUTPUT,BIT21);
+				GPIO_dataDirectionPIN(GPIO_B,GPIO_OUTPUT,BIT22);
+				GPIO_dataDirectionPIN(GPIO_E,GPIO_OUTPUT,BIT26);
+				GPIO_dataDirectionPIN(GPIO_C,GPIO_INPUT,BIT6);
+				GPIO_dataDirectionPIN(GPIO_A,GPIO_INPUT,BIT4);
+
+				/**Sets the threshold for interrupts, if the interrupt has higher priority constant that the BASEPRI, the interrupt will not be attended*/
+				NVIC_setBASEPRI_threshold(PRIORITY_5);
+				/**Enables and sets a particular interrupt and its priority*/
+				NVIC_enableInterruptAndPriotity(PORTA_IRQ,PRIORITY_4);
+				/**Enables and sets a particular interrupt and its priority*/
+				NVIC_enableInterruptAndPriotity(PORTC_IRQ,PRIORITY_4);
+
+				EnableInterrupts;
+
+				delay(3000);
 
 		uint32 output=0,inputPortA=0, inputPortC=0, totalInput = 0;
 		uint8 currentState = 0;
 
     while(1) {
+
     	if(TRUE == GPIO_getIRQStatus(GPIO_A) || TRUE == GPIO_getIRQStatus(GPIO_C)){
+
     		inputPortA = GPIOA->PDIR;
 			inputPortA &=(0x10);
 			inputPortC = GPIOC->PDIR;
@@ -142,9 +142,12 @@ int main(void) {
 			else if(WHITES == totalInput){
 				FineStateMachineMoore[currentState].fptrWhite;
 				uint16 delayer = FineStateMachineMoore[currentState].delay;
+				currentState = 0;//return to green state
 				delay(delayer);
 			}
 
+			GPIO_clearIRQStatus(GPIO_A);
+			GPIO_clearIRQStatus(GPIO_C);
     	}
     }
     return 0 ;
