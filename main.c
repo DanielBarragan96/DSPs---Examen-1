@@ -43,19 +43,19 @@
 
 void delay(uint16 delay);
 void turnLEDsOff();
-void blueLEDOn();
-void redLEDOn();
-void greenLEDOn();
-void yellowColor();
-void purpleColor();
-void whiteColor();
+void blueLEDOn(uint8 in);
+void redLEDOn(uint8 in);
+void greenLEDOn(uint8 in);
+void yellowColor(uint8 in);
+void purpleColor(uint8 in);
+void whiteColor(uint8 in);
 
 typedef struct
 {
-	uint32 (*fptrBefore);
+	uint32 (*fptrBefore)(uint8);
 	uint16 delay;
-	uint32 (*fptrAfter);
-	uint32 (*fptrWhite);
+	uint32 (*fptrAfter)(uint8);
+	uint32 (*fptrWhite)(uint8);
 }StateType;
 
 const StateType FineStateMachineMoore[5]=
@@ -68,10 +68,15 @@ const StateType FineStateMachineMoore[5]=
 		};
 
 typedef enum{
+	AFTER=1,
 	BEFORE,
-	AFTER,
 	WHITES
 }NextState;
+
+typedef enum{
+	DOWN=0,
+	UP=4,
+}limit;
 
 int main(void) {
 
@@ -127,20 +132,24 @@ int main(void) {
 			inputPortC &=(0x40);
 			inputPortC = inputPortC >> 6;
 			inputPortA = inputPortA >> 3;
-			totalInput = inputPortA|inputPortC;
+			totalInput = inputPortC|inputPortA;
 
 			if(BEFORE == totalInput){
-				FineStateMachineMoore[currentState].fptrBefore;
+				FineStateMachineMoore[currentState].fptrBefore(0);
 				uint16 delayer = FineStateMachineMoore[currentState].delay;
+				if(DOWN == currentState) currentState = UP;
+				else currentState--;
 				delay(delayer);
 			}
 			else if(AFTER == totalInput){
-				FineStateMachineMoore[currentState].fptrAfter;
+				FineStateMachineMoore[currentState].fptrAfter(0);
 				uint16 delayer = FineStateMachineMoore[currentState].delay;
+				currentState++;
+				if((UP+1) == currentState) currentState = DOWN;
 				delay(delayer);
 			}
 			else if(WHITES == totalInput){
-				FineStateMachineMoore[currentState].fptrWhite;
+				FineStateMachineMoore[currentState].fptrWhite(0);
 				uint16 delayer = FineStateMachineMoore[currentState].delay;
 				currentState = 0;//return to green state
 				delay(delayer);
@@ -171,34 +180,34 @@ void turnLEDsOff(){
 			delay(1000);
 }
 
-void blueLEDOn(){
+void blueLEDOn(uint8 in){
 		turnLEDsOff();
 	GPIOB->PDOR &= ~(0x00200000);/**Blue led on*/
 	delay(65000);
 }
-void redLEDOn(){
+void redLEDOn(uint8 in){
 		turnLEDsOff();
 	GPIOB->PDOR &= ~(0x00400000);/**Red led on*/
 	delay(65000);
 }
-void greenLEDOn(){
+void greenLEDOn(uint8 in){
 		turnLEDsOff();
 	GPIOE->PDOR &= ~(0x4000000);/**Green led on*/
 	delay(65000);
 }
-void yellowColor(){
+void yellowColor(uint8 in){
 		turnLEDsOff();
 	GPIOE->PDOR &= ~(0x4000000);/**Green led on*/
 	GPIOB->PDOR &= ~(0x00400000);/**Red led on*/
 	delay(65000);
 }
-void purpleColor(){
+void purpleColor(uint8 in){
 		turnLEDsOff();
 	GPIOB->PDOR &= ~(0x00200000);/**Blue led on*/
 	GPIOB->PDOR &= ~(0x00400000);/**Red led on*/
 	delay(65000);
 }
-void whiteColor(){
+void whiteColor(uint8 in){
 		turnLEDsOff();
 	GPIOB->PDOR &= ~(0x00400000);/**Red led on*/
 	GPIOB->PDOR &= ~(0x00200000);/**Blue led on*/
