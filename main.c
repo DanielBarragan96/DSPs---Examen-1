@@ -41,13 +41,6 @@
 #include "MK64F12.h"
 #include "NVIC.h"
 
-typedef struct
-{
-	void(*fptrBefore)(uint32);
-	uint16 dalay;
-	void (*fptrAfter)(uint32);
-}StateType;
-
 void delay(uint16 delay);
 void turnLEDsOff();
 void blueLEDOn();
@@ -57,16 +50,28 @@ void yellowColor();
 void purpleColor();
 void whiteColor();
 
+typedef struct
+{
+	uint32 (*fptrBefore);
+	uint16 delay;
+	uint32 (*fptrAfter);
+	uint32 (*fptrWhite);
+}StateType;
+
 const StateType FineStateMachineMoore[5]=
 		{
-			{&yellowColor,650000,&blueLEDOn},
-			{&greenLEDOn,650000,&purpleColor},
-			{&blueLEDOn,650000,&redLEDOn},
-			{&purpleColor,650000,&yellowColor},
-			{&redLEDOn,650000,&greenLEDOn}
+			{&yellowColor,650000,&blueLEDOn,&whiteColor},
+			{&greenLEDOn,650000,&purpleColor,&whiteColor},
+			{&blueLEDOn,650000,&redLEDOn,&whiteColor},
+			{&purpleColor,650000,&yellowColor,&whiteColor},
+			{&redLEDOn,650000,&greenLEDOn,&whiteColor}
 		};
 
-
+typedef enum{
+	BEFORE,
+	AFTER,
+	WHITES
+}NextState;
 
 int main(void) {
 
@@ -111,12 +116,56 @@ int main(void) {
 
 		EnableInterrupts;
 
-		uint32 i = 0;
+		uint32 output=0,inputPortA=0, inputPortC=0, totalInput = 0;
+		uint8 currentState = 0;
 
     while(1) {
+    	if(TRUE == GPIO_getIRQStatus(GPIO_A) || TRUE == GPIO_getIRQStatus(GPIO_C)){
+    		inputPortA = GPIOA->PDIR;
+			inputPortA &=(0x10);
+			inputPortC = GPIOC->PDIR;
+			inputPortC &=(0x40);
+			inputPortC = inputPortC >> 6;
+			inputPortA = inputPortA >> 3;
+			totalInput = inputPortA|inputPortC;
 
+			if(BEFORE == totalInput){
+				FineStateMachineMoore[currentState].fptrBefore;
+				uint16 delayer = FineStateMachineMoore[currentState].delay;
+				delay(delayer);
+			}
+			else if(AFTER == totalInput){
+				FineStateMachineMoore[currentState].fptrAfter;
+				uint16 delayer = FineStateMachineMoore[currentState].delay;
+				delay(delayer);
+			}
+			else if(WHITES == totalInput){
+				FineStateMachineMoore[currentState].fptrWhite;
+				uint16 delayer = FineStateMachineMoore[currentState].delay;
+				delay(delayer);
+			}
+
+    	}
     }
     return 0 ;
+}
+
+void delay(uint16 delay)
+{
+	volatile uint16 counter;
+
+	for(counter=delay; counter > 0; counter--)
+	{
+	}
+}
+
+void turnLEDsOff(){
+			GPIOB->PDOR |= 0x00200000;/**Blue led off*/
+			delay(1000);//65000
+			GPIOB->PDOR |= 0x00400000;/**Read led off*/
+			delay(1000);
+			GPIOE->PDOR |= 0x4000000;/**Green led off*/
+			delay(1000);
 }
 
 void blueLEDOn(){
